@@ -7,10 +7,8 @@ toolchains, and local verification details for the work that the manual defines.
 
 ## Pair
 
-Replace the two entries below. An assigned trio adds one entry.
-
 - Full Name (`@github-username`)
-- Full Name (`@github-username`)
+- Ma. Christie Jude L. Tarre (`@cjtarre`)
 
 ## Files You May Change
 
