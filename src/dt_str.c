@@ -159,7 +159,7 @@ dt_status dt_str_append(dt_str *s, const char *bytes, size_t length)
         s->bytes = new_bytes;
         s->capacity = new_capacity;
     }
-    
+
     /* Copy the new bytes after the existing string data. */
     memcpy(s->bytes + s->length, bytes, length);
     
@@ -187,11 +187,25 @@ dt_status dt_str_substr(const dt_str *s, size_t start, size_t length, dt_str **o
          dt_str_substr(s, 3, 5, &out)  -> DT_ERR_RANGE, *out untouched
        an allocation failure           -> DT_ERR_CAPACITY, *out untouched
        cases/boundary/substr_exact_end.case, cases/boundary/substr_past_end.case */
-    (void)s;
-    (void)start;
-    (void)length;
-    (void)out;
-    return DT_ERR_RANGE;
+
+    /* The starting position must be within the string. */
+    if (start > s->length) {
+        return DT_ERR_RANGE;
+    }
+
+    /* Check the requested length against the remaining bytes without overflow. */
+    if (length > s->length - start) {
+        return DT_ERR_RANGE;
+    }
+
+    /* Build the substring without changing *out if allocation fails. */
+    dt_str *result = dt_str_new(s->bytes + start, length);
+    if (result == NULL) {
+        return DT_ERR_CAPACITY;
+    }
+
+    *out = result;
+    return DT_OK;
 }
 
 /*
@@ -206,7 +220,12 @@ bool dt_str_eq(const dt_str *a, const dt_str *b)
        "hello" and "world"  -> false
        "a\0b" and "a"       -> false because their lengths are 3 and 1
        cases/normal/string_building.case, cases/capacity/embedded_zero_byte.case */
-    (void)a;
-    (void)b;
-    return false;
+       
+    /* Different lengths cannot contain the same byte sequence. */
+    if (a->length != b->length) {
+        return false;
+    }
+
+    /* Compare exactly the stored bytes, including embedded zero bytes. */
+    return memcmp(a->bytes, b->bytes, a->length) == 0;
 }
