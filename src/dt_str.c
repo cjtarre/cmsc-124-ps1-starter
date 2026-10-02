@@ -108,7 +108,7 @@ const char *dt_str_bytes(const dt_str *s)
          dt_str_bytes(s) -> the three bytes 'a', 0, 'b'
          dt_str_len(s)   -> 3, the required read length
        cases/capacity/embedded_zero_byte.case */
-       
+
     /* Return the stored bytes; length is tracked separately. */
     return s->bytes;
 }
@@ -127,10 +127,47 @@ dt_status dt_str_append(dt_str *s, const char *bytes, size_t length)
        s holds "hello": dt_str_append(s, ", world", 7) -> DT_OK, len is now 12
        an allocation failure                           -> DT_ERR_CAPACITY, s unchanged
        cases/normal/string_building.case, cases/capacity/string_growth.case */
-    (void)s;
-    (void)bytes;
-    (void)length;
-    return DT_ERR_CAPACITY;
+
+    /* Make sure the new data plus the terminator fits in size_t. */
+    if (length > SIZE_MAX - s->length - 1) {
+        return DT_ERR_CAPACITY;
+    }
+
+    size_t new_length = s->length + length;
+    size_t needed = new_length + 1;
+
+    /* Grow the buffer only when the current capacity is too small. */
+    if (needed > s->capacity) {
+        size_t new_capacity = s->capacity;
+    
+        /* Grow geometrically until the requested size fits. */
+        while (new_capacity < needed) {
+            if (new_capacity > SIZE_MAX / 2) {
+                new_capacity = needed;
+                break;
+            }
+    
+            new_capacity *= 2;
+        }
+
+        /* Resize through a temporary pointer so failure leaves s unchanged. */
+        char *new_bytes = realloc(s->bytes, new_capacity);
+        if (new_bytes == NULL) {
+            return DT_ERR_CAPACITY;
+        }
+
+        s->bytes = new_bytes;
+        s->capacity = new_capacity;
+    }
+    
+    /* Copy the new bytes after the existing string data. */
+    memcpy(s->bytes + s->length, bytes, length);
+    
+    /* Update the stored length and restore the final terminator. */
+    s->length = new_length;
+    s->bytes[new_length] = '\0';
+    
+    return DT_OK;
 }
 
 /*
