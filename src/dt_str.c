@@ -37,9 +37,32 @@ dt_str *dt_str_new(const char *bytes, size_t length)
        dt_str_new("hello", 5)  -> a string whose dt_str_len is 5
        dt_str_new("a\0b", 3)   -> a string whose dt_str_len remains 3
        cases/normal/string_building.case, cases/capacity/embedded_zero_byte.case */
-    (void)bytes;
-    (void)length;
-    return NULL;
+    
+    /* Prevent overflow when reserving one byte for the terminator. */
+    if (length == SIZE_MAX) {
+        return NULL;
+    }
+
+    /* Allocate the string handle. */
+    dt_str *s = malloc(sizeof(dt_str));
+    if (s == NULL) {
+        return NULL;
+    }
+
+    /* Allocate storage for the data plus a final zero byte. */
+    s->bytes = malloc(length + 1);
+    if (s->bytes == NULL) {
+        free(s);
+        return NULL;
+    }
+
+    /* Copy exactly length bytes so embedded zero bytes are preserved. */
+    memcpy(s->bytes, bytes, length);
+    s->bytes[length] = '\0';
+    s->length = length;
+    s->capacity = length + 1;
+
+    return s;
 }
 
 /*
@@ -50,7 +73,15 @@ void dt_str_free(dt_str *s)
     /* TODO: Release the buffer. Then release the handle. Accept NULL.
        dt_str_free(s)     -> the buffer and the handle are both released
        dt_str_free(NULL)  -> returns, having done nothing */
-    (void)s;
+    
+    /* NULL is valid; there is nothing to release. */
+    if (s == NULL) {
+        return;
+    }
+   
+    /* Release the byte buffer before the string handle. */
+    free(s->bytes);
+    free(s);
 }
 
 /*
