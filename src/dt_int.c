@@ -90,8 +90,43 @@ dt_status dt_int_mul(long long a, long long b, long long *out)
        dt_int_mul(LLONG_MIN, -1, &out)   -> DT_ERR_OVERFLOW, out untouched
        cases/normal/int_arithmetic.case,
        cases/boundary/int_mul_min_by_negative_one.case */
-    (void)a;
-    (void)b;
-    (void)out;
-    return DT_ERR_OVERFLOW;
+       
+    /* Multiplication by zero is always safe. */
+    if (a == 0 || b == 0) {
+        *out = 0;
+        return DT_OK;
+    }
+
+    /* LLONG_MIN * -1 cannot be represented by long long. */
+    if ((a == LLONG_MIN && b == -1) ||
+        (b == LLONG_MIN && a == -1)) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    /* Check whether the product would exceed the long long range. */
+    if (a > 0) {
+        if (b > 0) {
+            if (a > LLONG_MAX / b) {
+                return DT_ERR_OVERFLOW;
+            }
+        } else {
+            if (b < LLONG_MIN / a) {
+                return DT_ERR_OVERFLOW;
+            }
+        }
+    } else {
+        if (b > 0) {
+            if (a < LLONG_MIN / b) {
+                return DT_ERR_OVERFLOW;
+            }
+        } else {
+            if (a < LLONG_MAX / b) {
+                return DT_ERR_OVERFLOW;
+            }
+        }
+    }
+
+    /* The multiplication is now known to be safe. */
+    *out = a * b;
+    return DT_OK;
 }
