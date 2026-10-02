@@ -33,10 +33,20 @@ dt_status dt_int_add(long long a, long long b, long long *out)
        dt_int_add(2, 3, &out)          -> DT_OK, out = 5
        dt_int_add(LLONG_MAX, 1, &out)  -> DT_ERR_OVERFLOW, out untouched
        cases/normal/int_arithmetic.case, cases/boundary/int_overflow_add.case */
-    (void)a;
-    (void)b;
-    (void)out;
-    return DT_ERR_OVERFLOW;
+    
+    /* Positive b can push the result above LLONG_MAX. */
+    if (b > 0 && a > LLONG_MAX - b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    /* Negative b can push the result below LLONG_MIN. */
+    if (b < 0 && a < LLONG_MIN - b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    /* The addition is now known to be safe. */
+    *out = a + b;
+    return DT_OK;
 }
 
 /*
@@ -51,10 +61,20 @@ dt_status dt_int_sub(long long a, long long b, long long *out)
        dt_int_sub(10, 4, &out)                 -> DT_OK, out = 6
        dt_int_sub(LLONG_MIN + 1, 2, &out)      -> DT_ERR_OVERFLOW, out untouched
        cases/normal/int_arithmetic.case, cases/boundary/int_overflow_sub_min.case */
-    (void)a;
-    (void)b;
-    (void)out;
-    return DT_ERR_OVERFLOW;
+    
+    /* Positive b can push the result below LLONG_MIN. */
+    if (b > 0 && a < LLONG_MIN + b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    /* Negative b can push the result above LLONG_MAX. */
+    if (b < 0 && a > LLONG_MAX + b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    /* The subtraction is now known to be safe. */
+    *out = a - b;
+    return DT_OK;
 }
 
 /*
