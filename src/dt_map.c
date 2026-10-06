@@ -17,6 +17,7 @@
 
 #include "dt.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -37,7 +38,7 @@ struct dt_map {
 
 static size_t hash_key(const char *key)
 {
-    unsigned long long hash = 14695981039346656037ULL;
+    uint64_t hash = 14695981039346656037ULL;
 
     for (const unsigned char *p = (const unsigned char *)key;
          *p != '\0';
