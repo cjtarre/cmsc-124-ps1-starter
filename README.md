@@ -7,7 +7,7 @@ toolchains, and local verification details for the work that the manual defines.
 
 ## Pair
 
-- Full Name (`@github-username`)
+- Rafahil D. Palompon (`@vertigodot`)
 - Ma. Christie Jude L. Tarre (`@cjtarre`)
 
 ## Files You May Change
